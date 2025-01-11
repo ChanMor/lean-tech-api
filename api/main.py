@@ -67,7 +67,8 @@ async def retrieve_cases(name: str):
 
     headers = {
         "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
