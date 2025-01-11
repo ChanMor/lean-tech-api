@@ -74,7 +74,7 @@ async def retrieve_cases(name: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return {"status": "success", "cases": response.json}
+        return {"status": "success", "cases": response.text}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail="Error")
 
