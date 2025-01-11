@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 
 import requests
+import json
 import os
 
 
@@ -124,14 +125,42 @@ class TranslationRequest(BaseModel):
 
 @app.post("/translate")
 async def translate(request: TranslationRequest):
-    toTranslate = request.to_translate
-    targetLanguage = request.target_language
-    
-    for fields in toTranslate:
-        for k,v in fields:
-            fields[k] = translate_client.translate(v, target_language=targetLanguage)
-    
-    
-     
-    
-    return {"status": "Successful", "translatedText": translatedText}
+    to_translate = request.to_translate
+    target_language = request.target_language
+
+    try:
+        def translate_field(field: str) -> str:
+            if field:
+                return translate_client.translate(field, target_language=target_language)['translatedText']
+            return ""
+
+        if "description" in to_translate:
+            to_translate["description"] = translate_field(to_translate["description"])
+
+        if "careers" in to_translate:
+            for career in to_translate["careers"]:
+                career["title"] = translate_field(career.get("title", ""))
+                career["description"] = translate_field(career.get("description", ""))
+
+        if "dynasty" in to_translate:
+            for relative in to_translate["dynasty"]:
+                relative["relation"] = translate_field(relative.get("relation", ""))
+
+        if "cases" in to_translate:
+            for case in to_translate["cases"]:
+                case["description"] = translate_field(case.get("description", ""))
+
+        if "legislations" in to_translate:
+            for legislation in to_translate["legislations"]:
+                legislation["description"] = translate_field(legislation.get("description", ""))
+
+        if "projects" in to_translate:
+            for project in to_translate["projects"]:
+                project["description"] = translate_field(project.get("description", ""))
+
+        return {"status": "Successful", "translatedText": to_translate}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation error: {e}")
+
+
