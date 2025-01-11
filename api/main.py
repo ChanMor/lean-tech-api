@@ -142,7 +142,7 @@ async def retrieve_dynasty(name: str):
 @app.get("/retrieve/career")
 async def retrieve_career(name: str):
     prompt = f"""
-        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
+        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Career may refer not only to political or government position but also non government position. Return the data in strict JSON format following the schema:
         {{
         "careers": [
             {{
@@ -179,7 +179,7 @@ async def retrieve_projects(name: str):
 @app.get("/retrieve/bills")
 async def retrieve_bills(name: str):
     prompt = f"""
-        Get me all the bills related to {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate  description. This refers to authored bills as well as co-authored bills. Crawl government websites for such acts. Clearly indicate in description is authored or co-authored. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
+       Get me all the bills related to {name} he authored and one he co-authored were passed into law. Return the information strictly from credible Philippine sources, including senate.gov.ph** and verafiles.org. Use the official data available from these sites and provide valid links. Elaborate  description. Clearly state whether the bill was **authored or co-authored. Provide an **elaborate description** of each bill, including any additional context or legislative importance. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
         {{
         "legislations": [
             {{
@@ -198,7 +198,7 @@ async def retrieve_bills(name: str):
 @app.get("/retrieve/education")
 async def retrieve_education(name: str):
     prompt = f"""
-        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). There are instances where college degree was not completed, or did na graduated make sure to specified clearly. There are also cased where only special diplomas are only offered make sure to clarify the distinctions . Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Make sure college degree was completed. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "education": [
             {{
@@ -212,6 +212,7 @@ async def retrieve_education(name: str):
         If no educational information is found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
+
   
 class TranslationRequest(BaseModel):
     to_translate: dict
@@ -274,4 +275,3 @@ async def translate(request: TranslationRequest):
         return {"status": "Successful", "translatedText": to_translate}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
-
