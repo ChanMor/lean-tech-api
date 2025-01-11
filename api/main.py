@@ -285,3 +285,24 @@ async def translate(request: TranslationRequest):
         return {"status": "Successful", "translatedText": to_translate}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
+        
+# @app.get("/retrieve/image")
+# async def retrieve_image(name: str):
+#     converted_name = name.strip().replace(" ", "+")
+#     htmldata = requests.get(f"https://www.google.com/search?sca_esv=2dd64a8e5da33bb8&sxsrf=ADLYWIL0GIg8yVwrcbrqRHRU-VdMp3A0DA:1736613226715&q={converted_name}&udm=2&fbs=AEQNm0Aa4sjWe7Rqy32pFwRj0UkWtG_mNb-HwafvV8cKK_h1a0WYAF4mXQP8CuyQXqW6TNzkZZ7jOZKM_gGu23cm0qZLNgCiES5v1WXu3FuN2xHR3PFsugTBzi3q9S9PtGDQ8B6w_oxXeND7QcGoZiWDW3o5pZCf5Gz5b6Hsu1glpWKWXLesZ2zOnWVjM8SmWlMKBuI2Q8eIVzXH-CZECoLJuJiCSiGibw&sa=X&ved=2ahUKEwi28vWzjO6KAxXIxTgGHXOZEPIQtKgLegQIExAB&cshid=1736613266117256&biw=1512&bih=945&dpr=2")
+#     soup = BeautifulSoup(htmldata, 'html.parser')
+    
+#     for item in soup.find_all('img'): 
+#         return {"link": item['src']}
+
+@app.get("/retrieve/names")
+async def retrieve_names(name: str):
+    prompt = f"""
+        Get me the common name and the full legal name of {name}. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        {{
+            "commonName": <String>,
+            "legalName": <String>
+        }}
+        If no info is found, maintain the schema the fields set as empty string "".
+    """
+    return await get_response(prompt)
