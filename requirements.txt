@@ -4,3 +4,4 @@ python-dotenv
 requests
 pydantic
 google-cloud-translate
+google-cloud-core
