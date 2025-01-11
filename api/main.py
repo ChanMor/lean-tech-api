@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 
+import markdown_to_json
 import requests
 import os
 
@@ -46,7 +47,7 @@ async def retrieve_cases(name: str):
         "messages": [
             {
                 "role": "system",
-                "content": "Be precise and concise."
+                "content": "Be precise and concise. Generate it as json"
             },
             {
                 "role": "user",
@@ -75,7 +76,13 @@ async def retrieve_cases(name: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return {"status": "success", "cases": response.json()}
+        data = response.json()
+        # print(data["choices"][0]["message"]["content"])
+
+        # print(data['choices']['message']['content'])
+        dictified = markdown_to_json.dictify(data["choices"][0]["message"]["content"].strip("`"))
+        print(dictified)
+        return {"status": "success", "cases": dictified}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail="Error")
 
