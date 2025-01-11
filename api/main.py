@@ -54,7 +54,7 @@ async def retrieve_cases(name: str):
         "messages": [
             {
                 "role": "system",
-                "content": "Be precise and concise."
+                "content": "Be precise and concise. Generate it as json"
             },
             {
                 "role": "user",
@@ -83,7 +83,14 @@ async def retrieve_cases(name: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return {"status": "success", "cases": response.json()}
+        data = response.json()
+
+        json_string = data["choices"][0]["message"]["content"]
+        json_string = json_string.strip("```json\n").strip("\n```")
+
+        json_object = json.loads(json_string)
+
+        return {"status": "success", "data": json_object}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail="Error")
 
@@ -107,6 +114,7 @@ async def retreve_bills():
 async def retreve_education():
     return {"status": "Successful"}
 
+ 
 class TranslationRequest(BaseModel):
     to_translate: dict
     target_language: str
@@ -127,4 +135,3 @@ async def translate(request: TranslationRequest):
      
     
     return {"status": "Successful", "translatedText": translatedText}
-
