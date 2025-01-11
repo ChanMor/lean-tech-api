@@ -4,4 +4,3 @@ python-dotenv
 requests
 pydantic
 google-cloud-translate
-pybase64

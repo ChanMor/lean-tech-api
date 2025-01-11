@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from google.cloud import translate_v2
 
+import tempfile
 import requests
 import base64
 import json
@@ -16,15 +17,14 @@ key_base64 = os.getenv("GOOGLE_API_BASE64")
 
 key_json = base64.b64decode(key_base64)
 
-with open("/tmp/key.json", "wb") as f:
-    f.write(key_json)
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"/tmp/key.json"
+with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+    tmp_file.write(key_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp_file.name
 
 translate_client = translate_v2.Client()
 
 app = FastAPI()
-
 
 @app.get("/")
 async def connect():
