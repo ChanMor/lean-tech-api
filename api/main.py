@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from google.cloud import translate_v2
 
-
+import asyncio
 import tempfile
 import requests
 import base64
@@ -45,13 +45,16 @@ async def connect():
 @app.get("/retrieve/summary")
 async def retrieve_summary(name: str):
     # Retrieve data from all other endpoints
-    names = await retrieve_names(name)
-    careers = await retrieve_career(name)
-    dynasty = await retrieve_dynasty(name)
-    legislations = await retrieve_bills(name)
-    education = await retrieve_education(name)
-    projects = await retrieve_projects(name)
-    cases = await retrieve_cases(name)
+
+    names, careers, dynasty, legislations, education, projects, cases = await asyncio.gather(
+        retrieve_names(name),
+        retrieve_career(name),
+        retrieve_dynasty(name),
+        retrieve_bills(name),
+        retrieve_education(name),
+        retrieve_projects(name),
+        retrieve_cases(name)
+    )
 
     nameDict = names.get("data", [])
 
@@ -110,7 +113,7 @@ async def get_response(prompt: str):
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = await asyncio.to_thread(requests.post, url, json=payload, headers=headers, timeout=30)
 
         data = response.json()
 
