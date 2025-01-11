@@ -2,4 +2,5 @@ fastapi
 uvicorn
 python-dotenv
 requests
-markdown_to_json
+pydantic
+google.cloud
