@@ -1,14 +1,27 @@
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
-from bs4 import BeautifulSoup
+from google.cloud import translate_v2
+
 import requests
+import base64
 import json
 import re
 import os
-
+from pydantic import BaseModel
 load_dotenv()
 
+
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+key_base64 = os.getenv("GOOGLE_API_BASE64")
+
+key_json = base64.b64decode(key_base64)
+
+with open("/tmp/key.json", "wb") as f:
+    f.write(key_json)
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"/tmp/key.json"
+
+translate_client = translate_v2.Client()
 
 app = FastAPI()
 
@@ -79,6 +92,7 @@ async def get_response(prompt: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
+
         data = response.json()
 
         print(data)
@@ -95,14 +109,14 @@ async def get_response(prompt: str):
         json_object = json.loads(json_string)
         return {"status": "success", "data": json_object}
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=400, detail="Error retrieving data")
+        raise HTTPException(status_code=400, detail="error")
 
 # Define endpoints for specific information requests
 
 @app.get("/retrieve/cases")
 async def retrieve_cases(name: str):
     prompt = f"""
-        Get me all the legal cases involving {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the legal cases involving {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). This does not have to be an active case. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "cases": [
             {{
@@ -138,7 +152,7 @@ async def retrieve_dynasty(name: str):
 @app.get("/retrieve/career")
 async def retrieve_career(name: str):
     prompt = f"""
-        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
+        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Career may refer not only to political or government position but also non government position. Return the data in strict JSON format following the schema:
         {{
         "careers": [
             {{
@@ -175,7 +189,7 @@ async def retrieve_projects(name: str):
 @app.get("/retrieve/bills")
 async def retrieve_bills(name: str):
     prompt = f"""
-        Get me all the bills related to {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate  description. This refers to authored bills as well as co-authored bills. Crawl government websites for such acts. Clearly indicate in description is authored or co-authored. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
+       Get me all the bills related to {name} he authored and one he co-authored were passed into law. Return the information strictly from credible Philippine sources, including senate.gov.ph** and verafiles.org. Use the official data available from these sites and provide valid links. Elaborate  description. Clearly state whether the bill was **authored or co-authored. Provide an **elaborate description** of each bill, including any additional context or legislative importance. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
         {{
         "legislations": [
             {{
@@ -194,7 +208,7 @@ async def retrieve_bills(name: str):
 @app.get("/retrieve/education")
 async def retrieve_education(name: str):
     prompt = f"""
-        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). There are instances where college degree was not completed, or did na graduated make sure to specified clearly. There are also cased where only special diplomas are only offered make sure to clarify the distinctions . Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Make sure college degree was completed. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "education": [
             {{
@@ -209,6 +223,69 @@ async def retrieve_education(name: str):
         """
     return await get_response(prompt)
 
+  
+class TranslationRequest(BaseModel):
+    to_translate: dict
+    target_language: str
+
+@app.post("/translate")
+async def translate(request: TranslationRequest):
+    to_translate = request.to_translate
+    target_language = request.target_language
+
+    try:
+        def translate_field(field: str) -> str:
+            if field:
+                return translate_client.translate(field, target_language=target_language)['translatedText']
+            return ""
+
+        if "description" in to_translate:
+            to_translate["description"] = translate_field(to_translate["description"])
+
+        if "careers" in to_translate:
+            for career in to_translate["careers"] ["careers"]:
+                career["title"] = translate_field(career.get("title", ""))
+                career["description"] = translate_field(career.get("description", ""))
+
+        if "dynasty" in to_translate:
+            for relative in to_translate["dynasty"] ["dynasty"]:
+                relative["relation"] = translate_field(relative.get("relation", ""))
+                relative["currentPosition"] = translate_field(relative.get("currentPosition", ""))
+
+        if "cases" in to_translate:
+            for case in to_translate["cases"]["cases"]:
+                case["description"] = translate_field(case.get("description", ""))
+
+        if "legislations" in to_translate:
+            for legislation in to_translate["legislations"]["legislations"]:
+                legislation["description"] = translate_field(legislation.get("description", ""))
+
+        if "projects" in to_translate:
+            for project in to_translate["projects"]["projects"]:
+                project["description"] = translate_field(project.get("description", ""))
+
+        return {"status": "Successful", "translatedText": to_translate}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation error: {e}")
+
+@app.post("/translate-comparison-summary")
+async def translate(request: TranslationRequest):
+    to_translate = request.to_translate
+    target_language = request.target_language
+    
+    def translate_field(field: str) -> str:
+            if field:
+                return translate_client.translate(field, target_language=target_language)['translatedText']
+            return ""
+    try:
+        if ['summary'] in to_translate:
+            to_translate['summary'] = translate_field(to_translate['summary'])
+
+        return {"status": "Successful", "translatedText": to_translate}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation error: {e}")
+        
 # @app.get("/retrieve/image")
 # async def retrieve_image(name: str):
 #     converted_name = name.strip().replace(" ", "+")
