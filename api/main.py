@@ -30,6 +30,7 @@ app = FastAPI()
 async def retrieve_summary(name: str):
     # Retrieve data from all other endpoints
     names = await retrieve_names(name)
+    desc = await retrieve_desc(name)
     careers = await retrieve_career(name)
     dynasty = await retrieve_dynasty(name)
     legislations = await retrieve_bills(name)
@@ -43,7 +44,7 @@ async def retrieve_summary(name: str):
     summary = {
         "commonName": nameDict.get("commonName", []),
         "legalName": nameDict.get("legalName", []),
-        "description": f"Detailed summary of {name}'s life, career, education, and significant political and legal information.",
+        "description": desc.get("data", []),
         "cases": cases.get("data", []),
         "careers": careers.get("data", []),
         "dynasty": dynasty.get("data", []),
@@ -305,6 +306,17 @@ async def retrieve_names(name: str):
         {{
             "commonName": <String>,
             "legalName": <String>
+        }}
+        If no info is found, maintain the schema the fields set as empty string "".
+    """
+    return await get_response(prompt)
+
+@app.get("/retrieve/desc")
+async def retrieve_desc(name: str):
+    prompt = f"""
+        Get me the short description of {name}. Do not get data from wikipedia. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        {{
+            "desc": <String>
         }}
         If no info is found, maintain the schema the fields set as empty string "".
     """
