@@ -18,7 +18,7 @@ async def connect():
 async def retrieve_cases(name: str):
 
     prompt = f"""
-        get me all the cases from name and return it in a json format:
+        get me all the cases from {name} and return it in a json format:
         {{
         cases: [
         {{
