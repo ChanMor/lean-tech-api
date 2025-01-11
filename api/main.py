@@ -66,7 +66,7 @@ async def retrieve_cases(name: str):
     }
 
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -74,7 +74,7 @@ async def retrieve_cases(name: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return {"status": "success", "cases": response.content}
+        return {"status": "success", "cases": response.text}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail="Error")
 
