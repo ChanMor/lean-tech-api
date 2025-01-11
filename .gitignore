@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.eggs/
+
+# Virtual environment
+venv/
+.env/
+.env.*
+
+# Logs
+*.log
+*.out
+*.err
+logs/
+*.pid
+*.seed
+*.cover
+
+# Cache files
+.cache/
+*.cache
+*.pyc
+.cache.db
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vercel-specific
+.vercel/
+.vclayer/
+
+# Testing
+.coverage
+*.cover
+test-results/
+.tox/
+
+# Dependencies
+pip-log.txt
+pip-delete-this-directory.txt
+Pipfile.lock
+poetry.lock
+node_modules/
+
+# Staticfiles
+static/
+build/
+dist/
+
+# Optional: Ignore SQLite database
+*.sqlite3
+*.db
