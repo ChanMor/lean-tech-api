@@ -1,8 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 import requests
 import os
+
+
+from google.cloud import translate_v2
+
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r"key.json"
+translate_client = translate_v2.Client()
 
 load_dotenv()
 
@@ -99,5 +107,24 @@ async def retreve_bills():
 async def retreve_education():
     return {"status": "Successful"}
 
+class TranslationRequest(BaseModel):
+    to_translate: dict
+    target_language: str
 
+
+
+
+@app.post("/translate")
+async def translate(request: TranslationRequest):
+    toTranslate = request.to_translate
+    targetLanguage = request.target_language
+    
+    for fields in toTranslate:
+        for k,v in fields:
+            fields[k] = translate_client.translate(v, target_language=targetLanguage)
+    
+    
+     
+    
+    return {"status": "Successful", "translatedText": translatedText}
 

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "lean-tech-447507",
+  "private_key_id": "6627199f7630fd1f63889b227a065872f9329321",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDK9+3PxIWUoRN7\nAhYLECEesr0LuDeshkHRLISJr0X9ATTFfFIQ5ljFsFZ6OLHpYUWR0XLpTXVBfx3B\neeXOLX4ZkonWHNcCrApyd+09pliiBmQfRXu6MZvG1f77YxOzKvzfcvaJ1lRM4Kr/\nqLZpG8x/F0Nord0NfwwfCTRrod6byj3koiHB9zPOB51n8CnJKO2r/e8UKRs/01Sz\nAQZ7dikrO/3DNsgzVCvSk6Ybf9wgcOJJbeYeMXowx3i5WkTIiutddxNs4RHbVqYJ\ntIJziIddOsi8prp9FD6QzOspdLqq1qlQBWjCgg27Yji0pb37FRygcGEOw47U0eti\nqtsXJtS9AgMBAAECggEACN/uMnlnvtqL2Rh7rBhUiRIB1pyY4Jlj5i3HDiR6EAiT\nYmGKeWndA/3Zy3vQTwGoEqrAwRyYLdjiopuoyvWtxRf6y2rU6ELArTB7EN5FvgXq\nBFJb3oW98jktWO1u29TGHE4bo2YZ/FzkKowZt78AV3vwqwfTzyaDj5WDM4PvJsrN\nGT70yXslz2/WBtpDq00GkQpjaZb4/JB6JbGH/NNquqU3HgjZ0YPO0yhjkrvUiy8X\nXNC4EEvSxvt/OiOhYKghj3R17038kODvM5dq8utXcNCFn/0+9vJUfNbPOBQtNGgH\nmNqQL8vKm4++P51jA7GaK95F1yVS4v8l1NcHCFwaYQKBgQD6iJvCbBSzqd/Bwfjw\nJBo+tIOyVK2SJU8cQWIFdoLX9TRCw7QMcDNucUBgUW3xEVUW6hrCgs1BQF7/0weR\nwhEMqsgNyiVR58BZxyOugDSd/rVZdDEssO2sz1L+hMBKYMWq/UzTl/vTlvtiPv7A\n7KK/szDD/BQ/1P5BofSwPg/6nQKBgQDPZaN1o0zhmW73H+fjH9cAb3ADM94zULeK\nQMSisXWjh1iMeAkMajhBxZnQBqYDPPDZcZYyVrHXapSZt/Kw+YWELY5fQNfMSrwD\nTMbQJ0QB5JaXts0AztOmJYGSg2RNGS+gwu1+7TJyJ3ekd2WsGnHPKvwWLOIBAKwj\nyXbYz3GYoQKBgBjIeLgD3wxiyoqtOIXw3FPFoZ17eOwTGr9NzHeD4K+iRvgvydjN\nJJlRRLACfiCxuTwaDmmdbNZ+mqct5frKOsuI/V831vdCOKno5CO39PyIHMJrlw23\ntts4axpYYXk6F3OxuO7ZgwTMU7PFTYgiIHtcK3/HqO0jkb9GWSEyEnyVAoGAVXGS\nPkzgx7Dmvnkul6vucAd5JligGpQOia7VVBG4XX7NRFHPqIW6V56JF+MlUgAxWeQp\n9OMysYT/Y7UdDzw9fY8nMKcOQOQpQVLINcl3gzAhuq9dFhAfsjuRfkMTd5AAx0KH\nhdtDBTStXdyyzoy2hps28AvdsHwOb0/43qnYKwECgYEAgf9R+FlzRQfsMwWGzx8l\nS89ns0Gs0uS+pDM9AKyZVBjPhSKMBm5iAvZg2QVlYcEpoiG/bJi0/YhvBT7YHN+O\n7kgCwlL5X9JX9K180+mFoTZVU13uZXUyly6aEa73M6o38JDqNoA0snWa/sggAN+4\nQip6Y57DudONps4dZu7hBag=\n-----END PRIVATE KEY-----\n",
+  "client_email": "lean-tech-dev@lean-tech-447507.iam.gserviceaccount.com",
+  "client_id": "117493238769131151133",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/lean-tech-dev%40lean-tech-447507.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
