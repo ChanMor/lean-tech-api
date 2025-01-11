@@ -92,6 +92,7 @@ async def get_response(prompt: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
+
         data = response.json()
 
         print(data)
@@ -108,14 +109,14 @@ async def get_response(prompt: str):
         json_object = json.loads(json_string)
         return {"status": "success", "data": json_object}
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=400, detail="Error retrieving data")
+        raise HTTPException(status_code=400, detail="error")
 
 # Define endpoints for specific information requests
 
 @app.get("/retrieve/cases")
 async def retrieve_cases(name: str):
     prompt = f"""
-        Get me all the legal cases involving {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the legal cases involving {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). This does not have to be an active case. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "cases": [
             {{
