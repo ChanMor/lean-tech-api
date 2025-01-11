@@ -298,7 +298,7 @@ async def translate(request: TranslationRequest):
 @app.get("/retrieve/names")
 async def retrieve_names(name: str):
     prompt = f"""
-        Get me the common name and the full legal name of {name}. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        Get me the common name and the full legal name of {name}. Get from wikipedia or other sources the full name. No text outside of the required JSON. Return the data in strict JSON format following the schema:
         {{
             "commonName": <String>,
             "legalName": <String>
