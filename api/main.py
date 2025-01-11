@@ -47,11 +47,11 @@ async def get_response(prompt: str):
     url = "https://api.perplexity.ai/chat/completions"
 
     payload = {
-        "model": "llama-3.1-sonar-small-128k-online",
+        "model": "llama-3.1-sonar-huge-128k-online",
         "messages": [
             {
                 "role": "system",
-                "content": "Eleborate on description asked by users. Generate it strictly as JSON following the requested schema. If no data is found, leave fields empty (empty string or empty list) but **never fabricate data** or **generate hallucinations**. Never use wikipedia as source. Don't output anything other than the json format required. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net."
+                "content": "Eleborate on description asked by users. Generate it strictly as JSON following the requested schema. If no data is found, leave fields empty (empty string or empty list) but **never fabricate data** or **generate hallucinations**. Never use wikipedia and britanica as source. Don't output anything other than the json format required. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net."
             },
             {
                 "role": "user",
@@ -80,14 +80,12 @@ async def get_response(prompt: str):
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
 
-
+        print(data)
         json_string = data["choices"][0]["message"]["content"]
 
         match = re.search(r"```(.*?)```", json_string, re.DOTALL)
         if match:
             json_string = match.group(1)
-        else:
-            json_string = ""
 
         json_string = json_string.strip("```json\n").strip("\n```")
 
@@ -110,18 +108,18 @@ async def retrieve_cases(name: str):
                 "title": <String>,
                 "description": <String>,
                 "dateFiled": <String>,
-                "link": <String>  # URL of the reliable source, preferably from government or trusted news websites (avoid Wikipedia)
+                "link": <String>  # URL of the reliable source, preferably from government or trusted news websites (avoid Wikipedia and britanica)
             }},
             ...
         ]}}
-        If no cases are found, leave the fields empty (e.g., "" for string fields, [] for list fields).
+        If no cases are found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
 
 @app.get("/retrieve/dynasty")
 async def retrieve_dynasty(name: str):
     prompt = f"""
-        Get me all the political relatives and dynasty details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. This refers to the person biologically related to the person requested and should be an actual person in a government position or previously held government position. Elaborate with description. Never use wikipedia. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the political relatives and dynasty details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. This refers to the person biologically related to the person requested and should be an actual person in a government position or previously held government position. They may have also held position in provincial government positions. This can refer to mother, father, son, daughter, cousin, uncle, aunt, etc. Elaborate with description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "dynasty": [
             {{
@@ -139,7 +137,7 @@ async def retrieve_dynasty(name: str):
 @app.get("/retrieve/career")
 async def retrieve_career(name: str):
     prompt = f"""
-        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia. Return the data in strict JSON format following the schema:
+        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
         {{
         "careers": [
             {{
@@ -150,14 +148,14 @@ async def retrieve_career(name: str):
             }},
             ...
         ]}}
-        If no career information is found, leave the fields empty (e.g., "" for string fields, [] for list fields).
+        If no career information is found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
 
 @app.get("/retrieve/projects")
 async def retrieve_projects(name: str):
     prompt = f"""
-        Get me all the projects associated with {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Projects refer to the actual government initiatives such as programs, outreach, and etc. Never use wikipedia. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the projects associated with {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Projects refer to the actual government initiatives such as programs, outreach, and etc. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "projects": [
             {{
@@ -169,14 +167,14 @@ async def retrieve_projects(name: str):
             }},
             ...
         ]}}
-        If no project information is found, leave the fields empty (e.g., "" for string fields, [] for list fields).
+        If no project information is found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
 
 @app.get("/retrieve/bills")
 async def retrieve_bills(name: str):
     prompt = f"""
-        Get me all the bills related to {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate  description. This refers to authored bills as well as co-authored bills. Clearly indicate in description is authored or co-authored. Never use wikipedia. Return the data in strict JSON format following the schema:
+        Get me all the bills related to {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate  description. This refers to authored bills as well as co-authored bills. Crawl government websites for such acts. Clearly indicate in description is authored or co-authored. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
         {{
         "legislations": [
             {{
@@ -188,24 +186,24 @@ async def retrieve_bills(name: str):
             }},
             ...
         ]}}
-        If no bills are found, leave the fields empty (e.g., "" for string fields, [] for list fields).
+        If no bills are found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
 
 @app.get("/retrieve/education")
 async def retrieve_education(name: str):
     prompt = f"""
-        Get me all the educational details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). There are instances where college degree was not completed, or did na graduated make sure to specified clearly. There are also cased where only special diplomas are only offered make sure to clarify the distinctions . Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "education": [
             {{
-                "attained": <String>,  # e.g., Bachelor's degree, High School diploma, etc.
+                "attained": <String>, 
                 "school": <String>,
                 "dateCompleted": <String>,
                 "link": <String>  # URL of the reliable source
             }},
             ...
         ]}}
-        If no educational information is found, leave the fields empty (e.g., "" for string fields, [] for list fields).
+        If no educational information is found, maintain the schema the fields set as empty string "".
         """
     return await get_response(prompt)
