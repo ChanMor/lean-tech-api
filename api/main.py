@@ -18,7 +18,25 @@ async def connect():
 async def retrieve_cases(name: str):
 
     prompt = f"""
-        get cases of {name} from credible sources such as news articles, governement and .ph sites
+        get me all the cases from name and return it in a json format:
+        {{
+        cases: [
+        {{
+            title: <String>, 
+            desc: <String>,
+            date: <String>,
+            article/website URL: <String>
+        }},
+        {{
+            title: <String>, 
+            desc: <String>,
+            date: <String>,
+            article/website URL: <String>
+        }},
+        ...
+        ]
+        }}
+        Articles or website sources must be reliable. Make the desc more descriptive. site must not include wikipedia. Include from government websites
     """
 
     url = "https://api.perplexity.ai/chat/completions"
@@ -56,15 +74,29 @@ async def retrieve_cases(name: str):
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        return {"status": "success", "cases": response.text}
+        return {"status": "success", "cases": response.json}
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=400, detail="Error")
 
+@app.get("/retrieve/dynasty")
+async def retreve_dynasty():
+    return {"status": "Successful"}
 
+@app.get("/retrieve/career")
+async def retreve_career():
+    return {"status": "Successful"}
 
+@app.get("/retrieve/projects")
+async def retreve_projects():
+    return {"status": "Successful"}
 
+@app.get("/retrieve/bills")
+async def retreve_bills():
+    return {"status": "Successful"}
 
-
+@app.get("/retrieve/education")
+async def retreve_education():
+    return {"status": "Successful"}
 
 
 
