@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from google.cloud import translate_v2
+
 import requests
+import base64
 import json
 import re
 import os
@@ -10,8 +12,15 @@ load_dotenv()
 
 
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+key_base64 = os.getenv("GOOGLE_API_BASE64")
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r"key.json"
+key_json = base64.b64decode(key_base64)
+
+with open("/tmp/key.json", "wb") as f:
+    f.write(key_json)
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"/tmp/key.json"
+
 translate_client = translate_v2.Client()
 
 app = FastAPI()
