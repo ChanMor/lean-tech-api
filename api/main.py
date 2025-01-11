@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from dotenv import load_dotenv
 from google.cloud import translate_v2
+
 
 import tempfile
 import requests
@@ -25,6 +28,14 @@ with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
 translate_client = translate_v2.Client()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,  # Allow sending cookies or other credentials
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 @app.get("/")
 async def connect():
