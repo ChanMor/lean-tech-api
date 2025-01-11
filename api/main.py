@@ -29,6 +29,7 @@ app = FastAPI()
 @app.get("/retrieve/summary")
 async def retrieve_summary(name: str):
     # Retrieve data from all other endpoints
+    names = await retrieve_names(name)
     careers = await retrieve_career(name)
     dynasty = await retrieve_dynasty(name)
     legislations = await retrieve_bills(name)
@@ -36,10 +37,12 @@ async def retrieve_summary(name: str):
     projects = await retrieve_projects(name)
     cases = await retrieve_cases(name)
 
+    nameDict = names.get("data", [])
+
     # Combine data into a single response, leaving empty fields if no data is found
     summary = {
-        "commonName": name,
-        "legalName": name,  # Assuming legalName is the same as commonName
+        "commonName": nameDict.get("commonName", []),
+        "legalName": nameDict.get("legalName", []),
         "description": f"Detailed summary of {name}'s life, career, education, and significant political and legal information.",
         "cases": cases.get("data", []),
         "careers": careers.get("data", []),
