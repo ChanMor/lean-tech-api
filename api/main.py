@@ -25,6 +25,11 @@ translate_client = translate_v2.Client()
 
 app = FastAPI()
 
+
+@app.get("/")
+async def connect():
+    return {"status": "success"}
+
 # Main endpoint to retrieve all information
 @app.get("/retrieve/summary")
 async def retrieve_summary(name: str):
