@@ -14,7 +14,7 @@ app = FastAPI()
 async def connect():
     return {"status": "Successful"}
 
-@app.get("/retrieve_cases")
+@app.get("/retrieve/cases")
 async def retrieve_cases(name: str):
 
     prompt = f"""
