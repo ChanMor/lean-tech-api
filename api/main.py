@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from google.cloud import translate_v2
 
 import asyncio
-
+import copy
 import tempfile
 import hashlib
 import requests
@@ -325,7 +325,6 @@ class TranslationRequest(BaseModel):
 async def translate(request: TranslationRequest):
     orig = request.to_translate
     target_language = request.target_language
-    print(to_translate)
 
     cache_key = hashlib.md5(json.dumps(orig).encode("utf-8")).hexdigest()
     to_translate = copy.deepcopy(orig)
@@ -344,7 +343,7 @@ async def translate(request: TranslationRequest):
             return ""
 
         if "description" in to_translate:
-            to_translate["description"] = translate_field(to_translate["description"])
+            to_translate["description"] ["desc"]= translate_field(to_translate["description"]["desc"])
 
         if "careers" in to_translate:
             for career in to_translate["careers"] ["careers"]:
