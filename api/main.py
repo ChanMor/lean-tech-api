@@ -20,7 +20,7 @@ load_dotenv()
 import redis
 import copy
 
-rd = redis.Redis(host=os.getenv("REDIS_HOST"), port=18810, db="FranzChristian-free-db")
+rd = redis.Redis(host=os.getenv("REDIS_HOST"), port=6379, db=0)
 
 def normalize_name(name: str) -> str:
     return re.sub(r'[^a-z0-9]', '', name.strip().lower())
