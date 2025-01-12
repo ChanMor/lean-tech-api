@@ -1,11 +1,15 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
 from google.cloud import translate_v2
 
 import asyncio
+
 import tempfile
+import hashlib
 import requests
 import base64
 import json
@@ -13,6 +17,16 @@ import re
 import os
 from pydantic import BaseModel
 load_dotenv()
+import redis
+
+rd = redis.Redis(host=os.getenv("REDIS_HOST"), port=6379, db=0)
+
+def normalize_name(name: str) -> str:
+    return re.sub(r'[^a-z0-9]', '', name.strip().lower())
+
+def generate_cache_key(name: str) -> str:
+    normalized_name = normalize_name(name)
+    return hashlib.md5(normalized_name.encode('utf-8')).hexdigest()
 
 
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
@@ -43,18 +57,29 @@ async def connect():
 
 # Main endpoint to retrieve all information
 @app.get("/retrieve/summary")
-async def retrieve_summary(name: str):
+async def retrieve_summary(name: str, province: str = "", municipality: str = ""):
+    cache_key = generate_cache_key(name)
+    
+    # Try to get the cached data from Redis
+    cached_data = rd.get(cache_key)
+    
+    if cached_data:
+        # If cached data exists, parse the JSON string back into a Python object
+        return {"status": "success", "data": json.loads(cached_data)}
+    
     # Retrieve data from all other endpoints
 
-    names, careers, dynasty, legislations, education, projects, cases = await asyncio.gather(
-        retrieve_names(name),
-        retrieve_career(name),
-        retrieve_dynasty(name),
-        retrieve_bills(name),
-        retrieve_education(name),
-        retrieve_projects(name),
-        retrieve_cases(name)
+    names, desc, careers, dynasty, legislations, education, projects, cases = await asyncio.gather(
+        retrieve_names(name, province, municipality),
+        retrieve_desc(name, province, municipality),
+        retrieve_career(name, province, municipality),
+        retrieve_dynasty(name, province, municipality),
+        retrieve_bills(name, province, municipality),
+        retrieve_education(name, province, municipality),
+        retrieve_projects(name,province, municipality),
+        retrieve_cases(name, province, municipality)
     )
+
 
     nameDict = names.get("data", [])
 
@@ -62,7 +87,7 @@ async def retrieve_summary(name: str):
     summary = {
         "commonName": nameDict.get("commonName", []),
         "legalName": nameDict.get("legalName", []),
-        "description": f"Detailed summary of {name}'s life, career, education, and significant political and legal information.",
+        "description": desc.get("data", []),
         "cases": cases.get("data", []),
         "careers": careers.get("data", []),
         "dynasty": dynasty.get("data", []),
@@ -76,6 +101,9 @@ async def retrieve_summary(name: str):
         if not summary[key]:
             summary[key] = ""
 
+    rd.set(cache_key, json.dumps(summary))
+
+
     return {"status": "success", "data": summary}
 
 # Helper function to avoid code duplication
@@ -83,7 +111,7 @@ async def get_response(prompt: str):
     url = "https://api.perplexity.ai/chat/completions"
 
     payload = {
-        "model": "llama-3.1-sonar-huge-128k-online",
+        "model": "llama-3.1-sonar-small-128k-online",
         "messages": [
             {
                 "role": "system",
@@ -136,9 +164,16 @@ async def get_response(prompt: str):
 # Define endpoints for specific information requests
 
 @app.get("/retrieve/cases")
-async def retrieve_cases(name: str):
+async def retrieve_cases(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me all the legal cases involving {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). This does not have to be an active case. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the legal cases involving {name} ({province} {municipality}) from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Be neutral in tone without bias. This does not have to be an active case. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Cases refers to the criminal, civil, administrative, tax evasion, graft, corruption, etc which is something negative. This refers to something negative associated that comes with government and legal action. Elaborate with description. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "cases": [
             {{
@@ -154,9 +189,16 @@ async def retrieve_cases(name: str):
     return await get_response(prompt)
 
 @app.get("/retrieve/dynasty")
-async def retrieve_dynasty(name: str):
+async def retrieve_dynasty(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me all the political relatives and dynasty details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. This refers to the person biologically related to the person requested and should be an actual person in a government position or previously held government position. They may have also held position in provincial government positions. This can refer to mother, father, son, daughter, cousin, uncle, aunt, etc. Elaborate with description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the political relatives and dynasty details of {name} ({province} {municipality}) from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Be neutral in tone without bias. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. This refers to the person biologically related to the person requested and should be an actual person in a government position or previously held government position. They may have also held position in provincial government positions. This can refer to mother, father, son, daughter, cousin, uncle, aunt, etc. Elaborate with description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "dynasty": [
             {{
@@ -172,9 +214,16 @@ async def retrieve_dynasty(name: str):
     return await get_response(prompt)
 
 @app.get("/retrieve/career")
-async def retrieve_career(name: str):
+async def retrieve_career(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me all career details of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Career may refer not only to political or government position but also non government position. Return the data in strict JSON format following the schema:
+        Get me all career details of {name} ({province} {municipality}) from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Be neutral in tone without bias.  Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate with description. Never use wikipedia and britanica. Career may refer not only to political or government position but also non government position. Return the data in strict JSON format following the schema:
         {{
         "careers": [
             {{
@@ -190,9 +239,16 @@ async def retrieve_career(name: str):
     return await get_response(prompt)
 
 @app.get("/retrieve/projects")
-async def retrieve_projects(name: str):
+async def retrieve_projects(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me all the projects associated with {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Projects refer to the actual government initiatives such as programs, outreach, and etc. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the projects associated with {name} ({province} {municipality}) from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Be neutral in tone without bias. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Projects refer to the actual government initiatives such as programs, outreach, and etc. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "projects": [
             {{
@@ -209,9 +265,16 @@ async def retrieve_projects(name: str):
     return await get_response(prompt)
 
 @app.get("/retrieve/bills")
-async def retrieve_bills(name: str):
+async def retrieve_bills(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-       Get me all the bills related to {name} he authored and one he co-authored were passed into law. Return the information strictly from credible Philippine sources, including senate.gov.ph** and verafiles.org. Use the official data available from these sites and provide valid links. Elaborate  description. Clearly state whether the bill was **authored or co-authored. Provide an **elaborate description** of each bill, including any additional context or legislative importance. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
+       Get me all the bills related to {name} he authored and one he co-authored were passed into law. Return the information strictly from credible Philippine sources, including senate.gov.ph** and verafiles.org. Use the official data available from these sites and provide valid links. Elaborate  description. Be neutral in tone without bias. Clearly state whether the bill was **authored or co-authored. Provide an **elaborate description** of each bill, including any additional context or legislative importance. Never use wikipedia and britanica. Return the data in strict JSON format following the schema:
         {{
         "legislations": [
             {{
@@ -228,9 +291,16 @@ async def retrieve_bills(name: str):
     return await get_response(prompt)
 
 @app.get("/retrieve/education")
-async def retrieve_education(name: str):
+async def retrieve_education(name: str, province: str, municipality: str):
+    
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me all the educational attainments such as college degrees of {name} from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Make sure college degree was completed. Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
+        Get me all the educational attainments such as college degrees of {name} ({province} {municipality}) from **credible article sources such as news articles in the Philippines and government websites** (e.g., .ph sources). Make sure college degree was completed. Be neutral. Be neutral in tone without bias.  Get information strictly only from these reputable Philippine sources: .ph, gov.ph, edu.ph, gov, ph, mb.com.ph, gmanetwork.com, inquirer.net, pna.gov.ph, rappler.com, abs-cbn.com, philstar.com, and manilatimes.net. Elaborate description. Never use wikipedia and britanica. If no information found just return the schema requested with empty strings as values in each fields. No text outside of the required json. Return the data in strict JSON format following the schema:
         {{
         "education": [
             {{
@@ -254,10 +324,21 @@ class TranslationRequest(BaseModel):
 async def translate(request: TranslationRequest):
     to_translate = request.to_translate
     target_language = request.target_language
+    print(to_translate)
+
+    # cache_key = hashlib.md5(json.dumps(to_translate).encode("utf-8")).hexdigest()
+    
+    # Try to get the cached data from Redis
+    # cached_data = rd.get(cache_key)
+    
+    # if cached_data:
+    #     # If cached data exists, parse the JSON string back into a Python object
+    #     return {"status": "success", "translatedText": json.loads(cached_data)}
 
     try:
         def translate_field(field: str) -> str:
             if field:
+                print(translate_client.translate(field, target_language=target_language)['translatedText'])
                 return translate_client.translate(field, target_language=target_language)['translatedText']
             return ""
 
@@ -286,27 +367,42 @@ async def translate(request: TranslationRequest):
             for project in to_translate["projects"]["projects"]:
                 project["description"] = translate_field(project.get("description", ""))
 
+        # rd.set(cache_key, json.dumps(to_translate))
+        print(to_translate)
         return {"status": "Successful", "translatedText": to_translate}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
 
-@app.post("/translate-comparison-summary")
-async def translate(request: TranslationRequest):
-    to_translate = request.to_translate
-    target_language = request.target_language
+# @app.post("/translate-comparison-summary")
+# async def translate(request: TranslationRequest):
+#     to_translate = request.to_translate
+#     target_language = request.target_language
+#     print(to_translate)
+
+#     cache_key = hashlib.md5(json.dumps(to_translate).encode("utf-8")).hexdigest()
     
-    def translate_field(field: str) -> str:
-            if field:
-                return translate_client.translate(field, target_language=target_language)['translatedText']
-            return ""
-    try:
-        if ['summary'] in to_translate:
-            to_translate['summary'] = translate_field(to_translate['summary'])
+#     # Try to get the cached data from Redis
+#     cached_data = rd.get(cache_key)
+    
+#     if cached_data:
+#         # If cached data exists, parse the JSON string back into a Python object
+#         return {"status": "success", "translatedText": json.loads(cached_data)}
+    
+    
+#     def translate_field(field: str) -> str:
+#             if field:
+#                 return translate_client.translate(field, target_language=target_language)['translatedText']
+#             return ""
+#     try:
+#         if ['summary'] in to_translate:
+#             to_translate['summary'] = translate_field(to_translate['summary'])
 
-        return {"status": "Successful", "translatedText": to_translate}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Translation error: {e}")
+#         rd.set(cache_key, json.dumps(to_translate))
+
+#         return {"status": "Successful", "translatedText": to_translate}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
         
 # @app.get("/retrieve/image")
 # async def retrieve_image(name: str):
@@ -318,9 +414,16 @@ async def translate(request: TranslationRequest):
 #         return {"link": item['src']}
 
 @app.get("/retrieve/names")
-async def retrieve_names(name: str):
+async def retrieve_names(name: str, province: str, municipality: str):
+
+    if not province:
+        province = ""
+
+    if not municipality:
+        municipality = ""
+
     prompt = f"""
-        Get me the common name and the full legal name of {name}. Get from wikipedia or other sources the full name. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        Get me the common name and the full legal name of {name} ({province} {municipality}). Be neutral in tone without bias. Get from wikipedia or other sources the full name. No text outside of the required JSON. Return the data in strict JSON format following the schema:
         {{
             "commonName": <String>,
             "legalName": <String>
@@ -328,3 +431,73 @@ async def retrieve_names(name: str):
         If no info is found, maintain the schema the fields set as empty string "".
     """
     return await get_response(prompt)
+
+@app.get("/compare")
+async def compare(name1: str, name2: str):
+
+    cache_key1 = generate_cache_key(name1)
+    
+    # Try to get the cached data from Redis
+    cached_data1 = rd.get(cache_key1)
+    
+    if cached_data1:
+        # If cached data exists, parse the JSON string back into a Python object
+        summary1 = json.loads(cached_data1)
+    else:
+        summary1 = await retrieve_summary(name1)
+
+
+    cache_key2 = generate_cache_key(name2)
+    
+    # Try to get the cached data from Redis
+    cached_data2 = rd.get(cache_key2)
+    
+    if cached_data2:
+        # If cached data exists, parse the JSON string back into a Python object
+        summary2 = json.loads(cached_data2)
+    else:
+        summary2 = await retrieve_summary(name2)
+
+    return {"status": "success", "data": [summary1, summary2]}
+
+
+@app.get("/retrieve/desc")
+async def retrieve_desc(name: str, province, municipality):
+    prompt = f"""
+        Get me the short description of {name} ({province} {municipality}). Do not get data from wikipedia. Be neutral in tone without bias. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        {{
+            "desc": <String>
+        }}
+        If no info is found, maintain the schema the fields set as empty string "".
+    """
+    return await get_response(prompt)
+
+
+
+
+
+@app.get("/trending")
+async def get_trending_politicians():
+    
+    cache_key = "top_10"
+    
+    # Try to get the cached data from Redis
+    cached_data = rd.get(cache_key)
+    
+    if cached_data:
+        # If cached data exists, parse the JSON string back into a Python object
+        return {"status": "success", "data": json.loads(cached_data)}
+    
+    prompt = f"""
+        Give me the top 10 most popular and talked about philippine politicians today. No text outside of the required JSON. Return the data in strict JSON format following the schema:
+        {{
+            "trending": [<String>] #list of strings
+        }}
+        If no info is found, just return {{"trending": []}} empty string"".
+    """
+
+    json_obj = await get_response(prompt)
+    
+    rd.set(cache_key, json.dumps(json_obj))
+       
+    return {"status": "success", "data": json_obj}
