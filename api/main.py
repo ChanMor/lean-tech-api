@@ -18,6 +18,7 @@ import os
 from pydantic import BaseModel
 load_dotenv()
 import redis
+import copy
 
 rd = redis.Redis(host=os.getenv("REDIS_HOST"), port=6379, db=0)
 
@@ -322,18 +323,18 @@ class TranslationRequest(BaseModel):
 
 @app.post("/translate")
 async def translate(request: TranslationRequest):
-    to_translate = request.to_translate
+    orig = request.to_translate
     target_language = request.target_language
     print(to_translate)
 
-    # cache_key = hashlib.md5(json.dumps(to_translate).encode("utf-8")).hexdigest()
-    
+    cache_key = hashlib.md5(json.dumps(orig).encode("utf-8")).hexdigest()
+    to_translate = copy.deepcopy(orig)
     # Try to get the cached data from Redis
-    # cached_data = rd.get(cache_key)
+    cached_data = rd.get(cache_key)
     
-    # if cached_data:
-    #     # If cached data exists, parse the JSON string back into a Python object
-    #     return {"status": "success", "translatedText": json.loads(cached_data)}
+    if cached_data:
+        # If cached data exists, parse the JSON string back into a Python object
+        return {"status": "success", "translatedText": json.loads(cached_data)}
 
     try:
         def translate_field(field: str) -> str:
@@ -367,51 +368,14 @@ async def translate(request: TranslationRequest):
             for project in to_translate["projects"]["projects"]:
                 project["description"] = translate_field(project.get("description", ""))
 
-        # rd.set(cache_key, json.dumps(to_translate))
+        rd.set(cache_key, json.dumps(to_translate))
         print(to_translate)
         return {"status": "Successful", "translatedText": to_translate}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
 
-# @app.post("/translate-comparison-summary")
-# async def translate(request: TranslationRequest):
-#     to_translate = request.to_translate
-#     target_language = request.target_language
-#     print(to_translate)
 
-#     cache_key = hashlib.md5(json.dumps(to_translate).encode("utf-8")).hexdigest()
-    
-#     # Try to get the cached data from Redis
-#     cached_data = rd.get(cache_key)
-    
-#     if cached_data:
-#         # If cached data exists, parse the JSON string back into a Python object
-#         return {"status": "success", "translatedText": json.loads(cached_data)}
-    
-    
-#     def translate_field(field: str) -> str:
-#             if field:
-#                 return translate_client.translate(field, target_language=target_language)['translatedText']
-#             return ""
-#     try:
-#         if ['summary'] in to_translate:
-#             to_translate['summary'] = translate_field(to_translate['summary'])
-
-#         rd.set(cache_key, json.dumps(to_translate))
-
-#         return {"status": "Successful", "translatedText": to_translate}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Translation error: {e}")
-        
-# @app.get("/retrieve/image")
-# async def retrieve_image(name: str):
-#     converted_name = name.strip().replace(" ", "+")
-#     htmldata = requests.get(f"https://www.google.com/search?sca_esv=2dd64a8e5da33bb8&sxsrf=ADLYWIL0GIg8yVwrcbrqRHRU-VdMp3A0DA:1736613226715&q={converted_name}&udm=2&fbs=AEQNm0Aa4sjWe7Rqy32pFwRj0UkWtG_mNb-HwafvV8cKK_h1a0WYAF4mXQP8CuyQXqW6TNzkZZ7jOZKM_gGu23cm0qZLNgCiES5v1WXu3FuN2xHR3PFsugTBzi3q9S9PtGDQ8B6w_oxXeND7QcGoZiWDW3o5pZCf5Gz5b6Hsu1glpWKWXLesZ2zOnWVjM8SmWlMKBuI2Q8eIVzXH-CZECoLJuJiCSiGibw&sa=X&ved=2ahUKEwi28vWzjO6KAxXIxTgGHXOZEPIQtKgLegQIExAB&cshid=1736613266117256&biw=1512&bih=945&dpr=2")
-#     soup = BeautifulSoup(htmldata, 'html.parser')
-    
-#     for item in soup.find_all('img'): 
-#         return {"link": item['src']}
 
 @app.get("/retrieve/names")
 async def retrieve_names(name: str, province: str, municipality: str):
